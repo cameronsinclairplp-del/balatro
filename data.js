@@ -355,3 +355,64 @@ AU.TIPS = [
   {t:'Editions',b:'Foil +50 Chips. Holographic +10 Mult. Polychrome ×1.5 Mult. Negative +1 joker slot. Polychrome on your xMult joker; Negative on anything.'}
 ];
 
+
+/* Lessons. Diagrams: {type:'hand', cards:['Kh',...], keep:[idx], note:'...', result:'...'} — 8-card hand, kept cards highlighted, the rest discarded.
+   {type:'bar', segs:[{label,n,color}]} — proportions. {type:'table', head:[...], rows:[[...]]}. {type:'steps', items:[...]}.
+   Odds assume a fresh 52-card deck, 8 in hand, 44 to draw from. */
+AU.LESSONS = {
+  discards: [
+    {t:'What a discard is for', b:'A discard is a free redraw that doesn\'t touch your hands. You get 3 a round and 4 hands. Spend discards shaping toward ONE target hand; spend hands only on hands that score.'},
+    {t:'Decide the target before you touch a card', b:'Pairs build: hunt the pair. Flush build: keep the biggest suit. Face build: keep every face. Never discard something your jokers pay for.',
+     d:{type:'steps', items:['Look at all 8 cards','Name the hand you are building toward','Keep only the cards that help it','Discard the rest — up to 5 at once']}},
+    {t:'Discard in bulk, not dribbles', b:'A discard can be 1 to 5 cards and costs the same either way. Fishing? Throw 5. Already strong? Throw the 1 or 2 that aren\'t pulling weight.'},
+    {t:'Flush: hold 4, throw 4', b:'9 of your suit are still in the 44-card deck. One discard hits 61%. Two: 87%. Three: 96%. A flush build with discards left almost never bricks.',
+     d:{type:'hand', cards:['Ah','9h','7h','4h','Ks','Qd','8c','3s'], keep:[0,1,2,3], note:'Keep the hearts, throw the other four', result:'1 discard 61% · 2 discards 87% · 3 discards 96%'}},
+    {t:'Flush with Four Fingers: hold 3, throw 5', b:'You only need 4. Holding 3 of a suit with 10 still in the deck, one 5-card discard hits 74%. Smeared Joker makes two suits one, so count both.',
+     d:{type:'hand', cards:['Jh','6h','2h','Ks','Qd','9c','5s','3c'], keep:[0,1,2], note:'Three hearts is already a draw', result:'1 discard 74% to a 4-card flush'}},
+    {t:'Pair: keep three, throw five', b:'No pair in hand? Keep your three best unpaired cards (three outs each, nine total) and throw five. 70% to pair up, before counting pairs that arrive together in the draw.',
+     d:{type:'hand', cards:['Ks','Qh','Jd','9c','7h','5s','3d','2c'], keep:[0,1,2], note:'Nine outs across K, Q, J', result:'70%+ to a Pair'}},
+    {t:'Holding a pair already? Hunt the upgrade', b:'Keep the pair and one kicker, throw five. Trips or Two Pair from your kept ranks: 47%. Plus any pair the five new cards make between themselves — call it a coin flip to Two Pair or better.',
+     d:{type:'hand', cards:['Kh','Kc','Qs','8d','6c','4h','3s','2d'], keep:[0,1,2], note:'Pair of Kings plus a Queen kicker', result:'47% to Trips or Two Pair from K/Q outs alone'}},
+    {t:'Straights: open-ended beats gutshot', b:'Four in a row (5-6-7-8) has 8 outs: 57% on one discard. A gap in the middle (5-6-8-9) has 4 outs: 33%. Don\'t chase gutshots without Shortcut.',
+     d:{type:'hand', cards:['5c','6h','7d','8s','Kh','Qc','2d','2s'], keep:[0,1,2,3], note:'Open-ended: any 4 or 9', result:'57% on one discard · gutshot would be 33%'}},
+    {t:'Shortcut changes the maths', b:'Gaps of one rank are allowed, so 5-6-8-9 completes with a 3, 4, 7, 10 or J: 20 outs. One 4-card discard hits 92%. With Shortcut, nearly every "almost straight" is live.',
+     d:{type:'hand', cards:['5c','6h','8d','9s','Kh','Qc','2d','2s'], keep:[0,1,2,3], note:'With Shortcut: 3, 4, 7, 10 or J all complete it', result:'92% on one discard'}},
+    {t:'Face builds: there are only 12', b:'J, Q, K in four suits is 12 of 52. Holding none, a 5-card discard finds at least one 81% of the time. Pareidolia makes every card a face card and ends the hunt.',
+     d:{type:'hand', cards:['9h','8c','7s','5d','4h','3c','2s','2h'], keep:[7,6,5], note:'No faces — keep the three highest-value cards for your jokers, throw five', result:'81% to draw at least one face card'}},
+    {t:'Discard first, play second', b:'On hand one of a round, discard before you play unless the hand already beats the blind. Playing first burns a hand you could have scored with.'},
+    {t:'Hands can be discards too', b:'Blind nearly dead, 3 hands left? Play 5 junk cards. It scores a little, cycles 5 cards, and saves your real discards for the Boss. Watch jokers that react to what you play: Obelisk resets on your most-played hand, Ride the Bus resets on a scoring face card, Card Sharp wants a repeat.'},
+    {t:'Jokers that eat discards', b:'Castle, Mail-In Rebate, Hit the Road, Yorick, Faceless, Trading Card and Burnt Joker PAY you to discard. Banner, Delayed Gratification, Green Joker, Ramen and Mystic Summit (0 left) reward you for NOT. Know which side your table is on — the Stool check on the Jokers tab warns you when they clash.'},
+    {t:'Bosses that break the rule', b:'The Water starts you on 0 discards. The Hook discards 2 random cards per hand played. The Needle gives one hand, so every discard is sacred. The Serpent draws 3 after every action, so a small discard still refills your hand.'},
+    {t:'What never carries over', b:'The deck reshuffles every blind. Discards don\'t stack between rounds and there is no "burying" a card for later. Each blind is a fresh 52 minus whatever you have destroyed or added.'}
+  ],
+  deck: [
+    {t:'Your deck is the real build', b:'Jokers multiply what the cards give them. 52 cards, 8 drawn a round, reshuffled every blind. Every card you remove makes every other card show up more often.',
+     d:{type:'bar', title:'Fresh deck', segs:[{label:'Spades 13',n:13,c:'#2f3f3f'},{label:'Hearts 13',n:13,c:'#d9372c'},{label:'Clubs 13',n:13,c:'#1f2b2b'},{label:'Diamonds 13',n:13,c:'#e0463c'}]}},
+    {t:'Thin toward your hand', b:'Flush build: kill the two suits you don\'t play. Pair build: kill the ranks that never pair. A 36-card deck of mostly your suit draws a flush far more often than a 52-card one.',
+     d:{type:'bar', title:'Hearts flush deck after thinning', segs:[{label:'Hearts 13',n:13,c:'#d9372c'},{label:'Diamonds 13',n:13,c:'#e0463c'},{label:'Spades 6',n:6,c:'#2f3f3f'},{label:'Clubs 4',n:4,c:'#1f2b2b'}]}},
+    {t:'The removal tools', b:'Hanged Man destroys up to 2 selected cards. Immolate (Spectral) destroys 5 random cards for $20. Trading Card destroys a lone first discard for $3. Glass cards destroy themselves when they break.'},
+    {t:'When fatter is better', b:'Blue Joker (+2 Chips per card left in deck), Hologram (×0.25 per card added), Marble and Certificate (free cards every blind), DNA (copies a single first card). Erosion wants the opposite — pick a direction.'},
+    {t:'Change suits, not cards', b:'Sun → Hearts, Moon → Clubs, Star → Diamonds, World → Spades: 3 cards each. Four Sun tarots turns a mixed deck into a Hearts deck without destroying anything. Lovers makes one card Wild — every suit at once.'},
+    {t:'Enhancements: what the tarots do', b:'One card, one enhancement. Steel and Gold work while held; the rest work when played. Vampire eats all of them.',
+     d:{type:'table', head:['Tarot','Cards','Makes','Effect'], rows:[
+       ['Hierophant','2','Bonus','+30 Chips when scored'],['Empress','2','Mult','+4 Mult when scored'],['Lovers','1','Wild','Counts as every suit'],
+       ['Justice','1','Glass','×2 Mult, 1 in 4 to break after scoring'],['Chariot','1','Steel','×1.5 Mult while held in hand'],['Devil','1','Gold','$3 if held at end of round'],
+       ['Tower','1','Stone','+50 Chips, no rank, no suit'],['Magician','2','Lucky','1 in 5: +20 Mult · 1 in 15: $20']]}},
+    {t:'Rank tools', b:'Strength raises 2 cards by one rank (King wraps to Ace). Death copies the left selected card onto the right one — the fastest way to stack a rank for Four of a Kind or Five of a Kind.'},
+    {t:'Seals ride on top of enhancements', b:'A card can hold one enhancement and one seal. Red is the one that scales builds; Gold is money; Blue needs the card held; Purple turns discards into tarots.',
+     d:{type:'table', head:['Seal','From','Effect'], rows:[
+       ['Red','Deja Vu','Retriggers the card once when it scores or is held'],['Gold','Talisman','$3 when the card is played and scored'],
+       ['Blue','Trance','Held at end of round: creates the Planet for your last hand'],['Purple','Medium','Creates a Tarot when the card is discarded']]}},
+    {t:'Play order is left to right', b:'Played cards score in the order they sit in your hand. Drag your best enhanced card to the left for Hanging Chad; put Glass to the right of the chips it multiplies. Held cards (Steel, Baron) fire after the played ones.'},
+    {t:'How many cards to play', b:'Early: five, for base chips. Half Joker: three or fewer. Steel and Baron builds: play as few as the hand allows and keep the Kings in hand. The Psychic forces five — pad with junk.'},
+    {t:'Card chips', b:'2 to 10 score their number. J, Q, K score 10. Ace scores 11. Bonus +30, Stone +50. A Stone card always scores, even when it isn\'t part of the hand — but it has no suit or rank, so it never completes a flush or straight either.'},
+    {t:'Hand size is a resource', b:'8 base. Juggler +1, Turtle Bean +5 fading, Troubadour +2 for a hand a round, Stuntman −2, Merry Andy −1, The Manacle −1. Every extra card is a better discard and one more Steel King held.'},
+    {t:'Debuffed and face-down', b:'A debuffed card (Boss Blind, Pillar) scores 0 and triggers nothing — discard it or play around it. Face-down cards (Wheel, Mark, Fish) can still be played; you just can\'t see them until they score.'},
+    {t:'Decks at a glance', b:'Pick the deck for the build you want to practise.',
+     d:{type:'table', head:['Deck','Effect'], rows:[
+       ['Red','+1 discard every round'],['Blue','+1 hand every round'],['Yellow','Start with +$10'],['Green','No interest. +$2 per hand and +$1 per discard left at end of round'],
+       ['Black','+1 joker slot, −1 hand'],['Magic','Crystal Ball voucher, 2 copies of The Fool'],['Nebula','Telescope voucher, −1 consumable slot'],['Ghost','Spectral cards in the shop, start with Hex'],
+       ['Abandoned','No face cards in the deck'],['Checkered','26 Spades, 26 Hearts'],['Zodiac','Tarot Merchant, Planet Merchant and Overstock vouchers'],['Painted','+2 hand size, −1 joker slot'],
+       ['Anaglyph','Double Tag after every Boss Blind'],['Plasma','Chips and Mult are balanced before scoring; blinds are ×2'],['Erratic','Random ranks and suits']]}}
+  ]
+};

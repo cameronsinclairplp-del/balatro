@@ -14,7 +14,7 @@ const TABS = [
   {id:'hands', name:'Hands', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 20l-3-11 4-1 2 6"/><path d="M10 14l-1-9 4-1 1 8"/><path d="M14 12l1-8 4 1-1 9"/><path d="M7 20h11l3-6"/></svg>'},
   {id:'builds', name:'Builds', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>'},
   {id:'bosses', name:'Bosses', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12h.01M15 12h.01M10 16h4"/></svg>'},
-  {id:'tips', name:'Tips', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.6 1 1.4 1 2.5h6c0-1.1.3-1.9 1-2.5A6 6 0 0 0 12 3z"/></svg>'}
+  {id:'learn', name:'Learn', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5V5.5M20 18v3H6.5"/><path d="M9 8h7M9 12h5"/></svg>'}
 ];
 const PLUS = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
 const TICK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -36,7 +36,7 @@ const CARD_STAGE = new Set(['greedy','lusty','wrathful','gluttonous','scaryface'
 
 /* ---------- state ---------- */
 const S = {tab:'jokers', sub:'browse', table:[], q:'', rarity:'', role:'', sort:'auto', glow:'auto',
-  calc:{hand:'flush', lvl:1, chips:0, mult:0, x:1, useTable:true}, bossKind:'all'};
+  calc:{hand:'flush', lvl:1, chips:0, mult:0, x:1, useTable:true}, bossKind:'all', learn:'discards'};
 function load(){
   try{ const s = JSON.parse(localStorage.getItem(STORE)||'{}');
     if(Array.isArray(s.table)) S.table = s.table.filter(t => J[t.id]).map(t => ({id:t.id, ed: D.EDITIONS[t.ed] ? t.ed : 'b'}));
@@ -56,7 +56,10 @@ function toast(msg, undo, label){ const el = $('#toast'); undoFn = undo || null;
 /* ---------- routing ---------- */
 function parseHash(){
   const raw = location.hash.replace(/^#/, '');
-  const [tab, qs] = raw.split('?');
+  const [path, qs] = raw.split('?');
+  let [tab, sub] = path.split('/');
+  if(tab==='tips'){ tab = 'learn'; sub = 'tips'; }
+  if(tab==='learn' && ['discards','deck','tips'].includes(sub)) S.learn = sub;
   const params = new URLSearchParams(qs||'');
   return {tab: TABS.some(t=>t.id===tab) ? tab : 'jokers', t: params.get('t')};
 }
@@ -204,8 +207,8 @@ function A(){ const k = S.table.map(t=>t.id+t.ed).join(','); if(k !== _aKey){ _a
 const TIER = {S:{c:'#ff9a2e',name:'Legendary'}, A:{c:'#c084fc',name:'Epic'}, B:{c:'#5cb0ff',name:'Rare'}, C:{c:'#a8b5b2',name:'Common'}};
 const BAND = {strong:{c:'#ff9a2e',name:'Strong fit'}, good:{c:'#c084fc',name:'Good fit'}, some:{c:'#5cb0ff',name:'Some fit'}, none:{c:'#4a5c5c',name:'No fit'}, conflict:{c:'#ff6b63',name:'Conflict'}};
 function glowMode(){ return S.glow==='auto' ? (S.table.length ? 'fit' : 'power') : S.glow; }
-const HANDS_RE = /(Straight Flush|Five of a Kind|Flush House|Flush Five|Four of a Kind|Three of a Kind|Two Pair|Full House|High Card|Straight|Flush|Pair)/g;
-const CARDS_RE = /\b(face cards?|Kings?|Queens?|Jacks?|Aces?|Steel|Glass|Gold|Lucky|Stone|Wild|Enhanced|Spades?|Hearts?|Diamonds?|Clubs?|Planet|Tarot|Spectral|Negative|Jokers?|Booster Packs?|Boss Blinds?|Blind)\b/g;
+const HANDS_RE = /\b(Straight Flush|Five of a Kind|Flush House|Flush Five|Four of a Kind|Three of a Kind|Two Pair|Full House|High Card|Straights?|Flush|Pair)\b/g;
+const CARDS_RE = /\b(face cards?|Kings?|Queens?|Jacks?|Aces?|Steel|Glass|Gold|Lucky|Stone|Wild|Enhanced|Spades?|Hearts?|Diamonds?|Clubs?|Planet|Tarot|Spectral|Negative|Booster Packs?|Boss Blinds?|Blind)\b/g;
 function affix(eff){
   let t = h(eff);
   t = t.replace(/([+−-]\d[\d,.]*\s?Chips?)/gi, '<b class="v v-chips">$1</b>');
@@ -229,7 +232,7 @@ function nav(){
 function renderAll(){
   nav();
   const main = $('#main');
-  main.innerHTML = S.tab==='jokers' ? viewJokers() : S.tab==='hands' ? viewHands() : S.tab==='builds' ? viewBuilds() : S.tab==='bosses' ? viewBosses() : viewTips();
+  main.innerHTML = S.tab==='jokers' ? viewJokers() : S.tab==='hands' ? viewHands() : S.tab==='builds' ? viewBuilds() : S.tab==='bosses' ? viewBosses() : viewLearn();
   window.scrollTo(0,0);
 }
 function title(name, meta){ return `<div class="pagetitle"><h1>${name}</h1>${meta?`<span class="meta">${meta}</span>`:''}</div>`; }
@@ -422,8 +425,41 @@ function viewBosses(){
 }
 
 /* Tips */
-function viewTips(){
-  return `${title('TIPS', 'The method, in cards')}
+const SUIT = {s:{p:'M12 2C9 7 5 9 5 13a4 4 0 0 0 6 3.5V21h2v-4.5A4 4 0 0 0 19 13c0-4-4-6-7-11z',c:'#1d2626'},h:{p:'M12 21s-8-5.5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 10c0 5.5-8 11-8 11z',c:'#d9372c'},d:{p:'M12 2l7 10-7 10-7-10z',c:'#d9372c'},c:{p:'M12 2a4 4 0 0 0-3.5 6A4 4 0 1 0 11 15.5V21h2v-5.5A4 4 0 1 0 15.5 8 4 4 0 0 0 12 2z',c:'#1d2626'}};
+const SUITNAME = {s:'spades',h:'hearts',d:'diamonds',c:'clubs'};
+function card(code, state){
+  const rank = code.slice(0,-1), suit = code.slice(-1), su = SUIT[suit];
+  return `<span class="pc ${state}" style="--sc:${su.c}" role="img" aria-label="${rank} of ${SUITNAME[suit]}${state==='keep'?', keep':', discard'}"><b>${rank}</b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${su.p}" fill="currentColor"/></svg></span>`;
+}
+function diagram(d){
+  if(!d) return '';
+  if(d.type==='hand'){
+    const keep = new Set(d.keep);
+    return `<figure class="dg hand-dg"><div class="pcs">${d.cards.map((c,i)=>card(c, keep.has(i)?'keep':'toss')).join('')}</div>
+      <div class="dg-legend"><span><i class="sw keep"></i>Keep</span><span><i class="sw toss"></i>Discard</span></div>
+      <figcaption>${h(d.note)}<span class="dg-result">${h(d.result)}</span></figcaption></figure>`;
+  }
+  if(d.type==='steps') return `<ol class="dg steps">${d.items.map((x,i)=>`<li><span class="num">${i+1}</span>${h(x)}</li>`).join('')}</ol>`;
+  if(d.type==='bar'){ const total = d.segs.reduce((a,s)=>a+s.n,0);
+    return `<figure class="dg bar-dg"><figcaption>${h(d.title)} · ${total} cards</figcaption><div class="bar" role="img" aria-label="${h(d.title)}: ${d.segs.map(s=>s.label).join(', ')}">${d.segs.map(s=>`<span style="flex:${s.n};background:${s.c}" title="${h(s.label)}"></span>`).join('')}</div><div class="dg-legend">${d.segs.map(s=>`<span><i class="sw" style="background:${s.c}"></i>${h(s.label)}</span>`).join('')}</div></figure>`;
+  }
+  if(d.type==='table') return `<div class="dg tbl-wrap"><table class="lesson-tbl"><thead><tr>${d.head.map(x=>`<th scope="col">${h(x)}</th>`).join('')}</tr></thead><tbody>${d.rows.map(r=>`<tr>${r.map((x,i)=>i===0?`<th scope="row">${h(x)}</th>`:`<td>${affix(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return '';
+}
+function lessonCards(list){ return list.map(l=>`<article class="panel lesson"><h3>${h(l.t)}</h3><p>${affix(l.b)}</p>${diagram(l.d)}</article>`).join(''); }
+function viewLearn(){
+  const sub = S.learn;
+  const segs = [['discards','Discards'],['deck','Deck & cards'],['tips','Tips']];
+  const intro = {discards:'How to throw cards away so the right ones show up. Odds are for a fresh 52-card deck with 8 in hand.', deck:'What to add, remove and enhance — and how to play the cards you keep.', tips:'The method, in cards.'}[sub];
+  let body;
+  if(sub==='tips') body = viewTipsBody();
+  else body = `<div class="lessons">${lessonCards(D.LESSONS[sub])}</div>`;
+  return `${title('LEARN', intro)}
+  <div class="seg learn-seg" role="group" aria-label="Lesson">${segs.map(([v,n])=>`<button type="button" data-learn="${v}" aria-pressed="${sub===v}">${n}</button>`).join('')}</div>
+  ${body}`;
+}
+function viewTipsBody(){
+  return `
   <div class="inset flow" aria-label="Joker order">
     <div class="stepbox s1"><span class="word">1 · CHIPS &amp; SET-UP</span><small>Retriggers, Pareidolia, Splash, Banner, Sly, Scary Face</small></div><span class="arr" aria-hidden="true"></span>
     <div class="stepbox s2"><span class="word">2 · +MULT</span><small>Joker, Jolly, Abstract, Green Joker, Supernova</small></div><span class="arr" aria-hidden="true"></span>
@@ -464,6 +500,7 @@ document.addEventListener('click', e => {
   if(b.dataset.role!==undefined){ S.role = S.role===b.dataset.role ? '' : b.dataset.role; save(); b.parentElement.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed', x.dataset.role===S.role)); updateGrid(); return; }
   if(b.dataset.boss!==undefined){ S.bossKind = b.dataset.boss; renderAll(); return; }
   if(b.dataset.glow){ S.glow = b.dataset.glow; save(); updateGrid(); return; }
+  if(b.dataset.learn){ S.learn = b.dataset.learn; history.replaceState(null, '', '#learn/'+S.learn); renderAll(); return; }
   const act = b.dataset.act; const id = b.dataset.id; const slot = +b.dataset.slot;
   if(act==='add') addJoker(id);
   else if(act==='remove') removeJoker(id);
