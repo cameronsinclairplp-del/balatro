@@ -416,3 +416,33 @@ AU.LESSONS = {
        ['Anaglyph','Double Tag after every Boss Blind'],['Plasma','Chips and Mult are balanced before scoring; blinds are ×2'],['Erratic','Random ranks and suits']]}}
   ]
 };
+
+/* Run context */
+AU.DECKS = [
+  {id:'red',name:'Red',eff:'+1 discard every round'},{id:'blue',name:'Blue',eff:'+1 hand every round'},{id:'yellow',name:'Yellow',eff:'Start with +$10'},
+  {id:'green',name:'Green',eff:'No interest; $2 per hand and $1 per discard left at round end'},{id:'black',name:'Black',eff:'+1 joker slot, −1 hand'},
+  {id:'magic',name:'Magic',eff:'Crystal Ball voucher, 2 Fools'},{id:'nebula',name:'Nebula',eff:'Telescope voucher, −1 consumable slot'},{id:'ghost',name:'Ghost',eff:'Spectrals in shop, start with Hex'},
+  {id:'abandoned',name:'Abandoned',eff:'No face cards'},{id:'checkered',name:'Checkered',eff:'26 Spades, 26 Hearts'},{id:'zodiac',name:'Zodiac',eff:'Tarot Merchant, Planet Merchant, Overstock'},
+  {id:'painted',name:'Painted',eff:'+2 hand size, −1 joker slot'},{id:'anaglyph',name:'Anaglyph',eff:'Double Tag after every Boss Blind'},{id:'plasma',name:'Plasma',eff:'Chips and Mult balanced; blinds ×2'},{id:'erratic',name:'Erratic',eff:'Random ranks and suits'}
+];
+AU.VOUCHERS = [
+  ['Overstock','Overstock Plus'],['Clearance Sale','Liquidation'],['Hone','Glow Up'],['Reroll Surplus','Reroll Glut'],['Crystal Ball','Omen Globe'],['Telescope','Observatory'],
+  ['Grabber','Nacho Tong'],['Wasteful','Recyclomancy'],['Tarot Merchant','Tarot Tycoon'],['Planet Merchant','Planet Tycoon'],['Seed Money','Money Tree'],['Blank','Antimatter'],
+  ['Magic Trick','Illusion'],['Hieroglyph','Petroglyph'],["Director's Cut",'Retcon'],['Paint Brush','Palette']
+];
+AU.PACKS = [
+  {id:'buffoon',name:'Buffoon',pick:'2 jokers, take 1 · Jumbo 4 take 1 · Mega 4 take 2'},
+  {id:'arcana',name:'Arcana',pick:'Tarots — enhance, destroy or re-suit cards'},
+  {id:'celestial',name:'Celestial',pick:'Planets — level a hand'},
+  {id:'spectral',name:'Spectral',pick:'Seals, editions, big swings'},
+  {id:'standard',name:'Standard',pick:'Playing cards, often enhanced or sealed'}
+];
+AU.EDITION_COST = {b:0,f:2,h:3,p:5,n:5};
+/* What to pull from a Celestial / Arcana pack, by what your table rewards */
+AU.PLANET_FOR = {pair:'Mercury',twopair:'Uranus',trips:'Venus',straight:'Saturn',flush:'Jupiter',fullhouse:'Earth',quads:'Mars',sflush:'Neptune',highcard:'Pluto'};
+AU.TAROT_FOR = [
+  {tag:'steel',pick:'The Chariot (Steel)'},{tag:'glass',pick:'Justice (Glass)'},{tag:'lucky',pick:'The Magician (Lucky)'},{tag:'gold',pick:'The Devil (Gold)'},{tag:'stone',pick:'The Tower (Stone)'},
+  {tag:'wild',pick:'The Lovers (Wild)'},{tag:'heart',pick:'The Sun (→ Hearts)'},{tag:'diamond',pick:'The Star (→ Diamonds)'},{tag:'spade',pick:'The World (→ Spades)'},{tag:'club',pick:'The Moon (→ Clubs)'},
+  {tag:'flush',pick:'Any suit tarot that matches your biggest suit'},{tag:'king',pick:'Strength (push Queens up to Kings)'},{tag:'pair',pick:'Death (copy a card to stack a rank)'},{tag:'quads',pick:'Death (copy a card to stack a rank)'},
+  {tag:'smalldeck',pick:'The Hanged Man (destroy 2)'},{tag:'enhanced',pick:'The Hierophant (Bonus) or The Empress (Mult)'}
+];
