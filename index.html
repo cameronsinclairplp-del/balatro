@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ante Up — Balatro companion</title>
+<meta name="description" content="Balatro companion: pick your jokers and editions, check the three-legged stool, get the left-to-right order, synergies and what to buy next. Plus hands, builds, bosses and tips.">
+<meta name="theme-color" content="#1a2626">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ante Up">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<canvas id="swirl" aria-hidden="true"></canvas>
+
+<div class="app">
+  <aside class="side">
+    <a class="logo" href="#jokers" aria-label="Ante Up home"><span>ANTE</span> <span>UP</span><span class="sub">Balatro companion</span></a>
+    <nav aria-label="Primary" id="sidenav"></nav>
+    <div class="foot"><span class="long">Balatro 1.0.1 · </span>150 jokers<br><span class="long">Table saved on this device</span></div>
+  </aside>
+
+  <header class="topbar">
+    <a class="logo" href="#jokers" aria-label="Ante Up home">ANTE UP</a>
+    <span class="title" id="toptitle">JOKERS</span>
+  </header>
+
+  <main id="main" tabindex="-1" aria-live="off"></main>
+
+  <nav class="tabbar" aria-label="Primary" id="tabbar"></nav>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
