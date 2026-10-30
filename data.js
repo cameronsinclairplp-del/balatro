@@ -201,7 +201,7 @@ AU.COMBOS = [
   {ids:['fourfingers','shortcut'],why:'4-card straights with gaps. Straights become routine.'},
   {ids:['smeared','bloodstone'],why:'Diamonds count as Hearts: twice the Bloodstone triggers.'},
   {ids:['smeared','tribe'],why:'Flush every hand, ×2 every hand.'},
-  {ids:['luckycat','oops'],why:'Lucky cards hit 2 in 5 and 1 in 7 instead of 1 in 5 and 1 in 15. Lucky Cat snowballs.'},
+  {ids:['luckycat','oops'],why:'Lucky cards hit 2 in 5 for Mult and 2 in 15 for cash instead of 1 in 5 and 1 in 15. Lucky Cat snowballs.'},
   {ids:['bloodstone','oops'],why:'Bloodstone becomes a guaranteed ×1.5 per Heart.'},
   {ids:['spacejoker','oops'],why:'1 in 2 to level your hand every play.'},
   {ids:['glassjoker','canio'],why:'Glass face cards breaking feed both: ×0.75 and ×1 per break.'},
@@ -253,7 +253,6 @@ AU.COMBOS = [
   {ids:['dusk','acrobat'],why:'Both fire on the final hand. Save your best hand for last.'},
   {ids:['mrbones','luchador'],why:'Two run-savers: one eats a boss, one eats a death.'},
   {ids:['chicot','matador'],why:'No — Chicot disables the boss, so Matador has nothing to trigger.',anti:true},
-  {ids:['throwback','dietcola'],why:'Diet Cola\'s Double Tag means skipping pays twice; Throwback grows per skip.'},
   {ids:['flowerpot','splash'],why:'Splash makes all five cards score, so four suits is easy to hit.'},
   {ids:['seeingdouble','splash'],why:'Any Club plus anything else scores — Splash guarantees both.'},
   {ids:['yorick','merryandy'],why:'+3 discards a round feeds the 23-discard counter faster.'},
@@ -356,7 +355,3 @@ AU.TIPS = [
   {t:'Editions',b:'Foil +50 Chips. Holographic +10 Mult. Polychrome ×1.5 Mult. Negative +1 joker slot. Polychrome on your xMult joker; Negative on anything.'}
 ];
 
-AU.SOURCES = [
-  {name:'Heatmiser — How to Win at Balatro With Early Decks (Steam guide)',url:'https://steamcommunity.com/sharedfiles/filedetails/'},
-  {name:'BalatroHQ tools and guides',url:'https://balatrohq.com/guides/'}
-];

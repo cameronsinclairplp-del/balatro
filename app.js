@@ -48,8 +48,10 @@ function save(){ try{ localStorage.setItem(STORE, JSON.stringify({table:S.table,
 function slots(){ return 5 + S.table.filter(t => t.ed==='n').length; }
 
 /* ---------- toast ---------- */
-let toastT;
-function toast(msg){ const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove('show'), 2400); }
+let toastT, undoFn = null;
+function toast(msg, undo, label){ const el = $('#toast'); undoFn = undo || null;
+  el.innerHTML = h(msg) + (undo ? ` <button class="undo" type="button" data-act="undo">${h(label||'Undo')}</button>` : '');
+  el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>{ el.classList.remove('show'); undoFn = null; }, undo ? 5000 : 2400); }
 
 /* ---------- routing ---------- */
 function parseHash(){
@@ -349,7 +351,7 @@ function viewHands(){
   </section>
   <section aria-label="Hand table">
     <h3 class="sec">BASE SCORE · GAIN PER PLANET</h3>
-    <div class="stack">${D.HANDS.map(hd=>`<button class="hand${hd.secret?' secret':''}" type="button" data-act="pickhand" data-id="${hd.id}" aria-label="Use ${hd.name} in the calculator" style="text-align:left;cursor:pointer;width:100%"><span class="word">${hd.name}${hd.secret?' · secret':''}</span><span class="box chips">${hd.chips}</span><span class="box mult">${hd.mult}</span><span class="meta">${hd.planet}: +${hd.pc} chips, +${hd.pm} mult · ${h(hd.ex)}</span></button>`).join('')}</div>
+    <div class="stack">${D.HANDS.map(hd=>`<button class="hand${hd.secret?' secret':''}" type="button" data-act="pickhand" data-id="${hd.id}" style="text-align:left;cursor:pointer;width:100%"><span class="word">${hd.name}${hd.secret?' · secret':''}</span><span class="sr"> — use in calculator</span><span class="box chips">${hd.chips}</span><span class="box mult">${hd.mult}</span><span class="meta">${hd.planet}: +${hd.pc} chips, +${hd.pm} mult · ${h(hd.ex)}</span></button>`).join('')}</div>
   </section>
   </div>`;
 }
@@ -371,35 +373,39 @@ function viewBuilds(){
 function viewBosses(){
   const kinds = [['all','All 28'],['debuff','Debuffs'],['hand','Hand limits'],['score','Score checks'],['money','Money'],['finisher','Finishers']];
   const list = D.BOSSES.filter(b => S.bossKind==='all' || b.kind===S.bossKind);
+  const KIND = {debuff:'Debuff',hand:'Hand limit',score:'Score check',money:'Money'};
   const orb = b => ({debuff:'#c9a5ff,#6a3fa6',hand:'#7fd6a8,#2f8f62',score:'#9fb3ae,#4a5c5c',money:'#ffd37a,#c7801a',finisher:'#ffc27a,#c75a12'}[b.kind]);
   return `${title('BOSSES', 'Every Boss Blind and the counter')}
   <div class="scrollx filters" role="group" aria-label="Filter">${kinds.map(([v,n])=>`<button class="pill" type="button" data-boss="${v}" aria-pressed="${S.bossKind===v}">${n}</button>`).join('')}</div>
-  <div class="bosses" id="bosslist">${list.map(b=>`<article class="boss${b.kind==='finisher'?' finisher':''}"><div class="orb" style="background:radial-gradient(circle at 35% 30%,${orb(b)} 70%)"></div><h3>${h(b.name)} <span class="meta">· ${b.kind==='finisher'?'Ante 8 finisher':'from Ante '+b.ante}</span></h3><span class="eff">${h(b.eff)}</span><span class="counter"><b>COUNTER</b> ${h(b.counter)}</span></article>`).join('')}</div>`;
+  <div class="bosses" id="bosslist">${list.map(b=>`<article class="boss${b.kind==='finisher'?' finisher':''}"><div class="orb" style="background:radial-gradient(circle at 35% 30%,${orb(b)} 70%)"></div><h3>${h(b.name)} <span class="meta">· ${b.kind==='finisher'?'Ante 8 finisher':KIND[b.kind]+' · from Ante '+b.ante}</span></h3><span class="eff">${h(b.eff)}</span><span class="counter"><b>COUNTER</b> ${h(b.counter)}</span></article>`).join('')}</div>`;
 }
 
 /* Tips */
 function viewTips(){
   return `${title('TIPS', 'The method, in cards')}
   <div class="inset flow" aria-label="Joker order">
-    <div class="stepbox" style="background:var(--chips);box-shadow:0 4px 0 var(--chips-dk)"><span class="word">1 · CHIPS &amp; SET-UP</span><small>Retriggers, Pareidolia, Splash, Banner, Sly, Scary Face</small></div><span class="arr" aria-hidden="true"></span>
-    <div class="stepbox" style="background:var(--mult);box-shadow:0 4px 0 var(--mult-dk)"><span class="word">2 · +MULT</span><small>Joker, Jolly, Abstract, Green Joker, Supernova</small></div><span class="arr" aria-hidden="true"></span>
-    <div class="stepbox" style="background:var(--x);box-shadow:0 4px 0 #5a2f78"><span class="word">3 · xMULT</span><small>Cavendish, The Duo, Hologram, Baron, Blueprint last</small></div>
+    <div class="stepbox s1"><span class="word">1 · CHIPS &amp; SET-UP</span><small>Retriggers, Pareidolia, Splash, Banner, Sly, Scary Face</small></div><span class="arr" aria-hidden="true"></span>
+    <div class="stepbox s2"><span class="word">2 · +MULT</span><small>Joker, Jolly, Abstract, Green Joker, Supernova</small></div><span class="arr" aria-hidden="true"></span>
+    <div class="stepbox s3"><span class="word">3 · xMULT</span><small>Cavendish, The Duo, Hologram, Baron, Blueprint last</small></div>
   </div>
   <div class="tips" style="margin-top:12px">${D.TIPS.map(t=>`<article class="panel tipcard"><h3>${h(t.t)}</h3><p>${h(t.b)}</p></article>`).join('')}</div>
   <p class="sources">Method from Heatmiser's Steam guide <em>How to Win at Balatro With Early Decks</em>, cross-checked against <a href="https://balatrohq.com/guides/" rel="noopener">BalatroHQ</a>. Numbers are Balatro 1.0.1. Tiers are rough community consensus, not gospel. Fan-made; not affiliated with LocalThunk or Playstack.</p>`;
 }
 
 /* ---------- actions ---------- */
+function showSub(sub){ S.sub = sub; document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed', x.dataset.sub===S.sub)); const pb = $('#pane-browse'), pt = $('#pane-table'); if(pb) pb.hidden = S.sub!=='browse'; if(pt) pt.hidden = S.sub!=='table'; window.scrollTo(0,0); }
 function addJoker(id){
   if(S.table.some(t=>t.id===id)){ toast(`${J[id].name} is already on the table`); return; }
   if(S.table.length >= slots()){ toast(`Table full (${slots()}) — mark a joker Negative for another slot`); return; }
-  S.table.push({id, ed:'b'}); save(); updateTable(); toast(`Added ${J[id].name}`);
+  S.table.push({id, ed:'b'}); save(); updateTable();
+  const onPhone = S.tab==='jokers' && S.sub==='browse' && !matchMedia('(min-width:900px)').matches;
+  toast(`Added ${J[id].name}`, onPhone ? () => showSub('table') : null, onPhone ? 'View table' : null);
 }
-function removeJoker(id){ S.table = S.table.filter(t=>t.id!==id); save(); updateTable(); toast(`Removed ${J[id].name}`); }
+function removeJoker(id){ const prev = S.table.slice(); S.table = S.table.filter(t=>t.id!==id); save(); updateTable(); toast(`Removed ${J[id].name}`, () => { S.table = prev; save(); updateTable(); toast(`${J[id].name} is back`); }); }
 function loadBuild(id){
   const b = D.BUILDS.find(x=>x.id===id); if(!b) return;
   S.table = b.jokers.slice(0,5).map(id=>({id, ed:'b'})); save();
-  S.sub = 'table'; location.hash = '#jokers';
+  S.sub = 'table'; if(S.tab==='jokers') renderAll(); else location.hash = '#jokers';
   toast(b.jokers.length>5 ? `${b.name} loaded — ${b.jokers.length} listed, first 5 on the table` : `${b.name} loaded`);
 }
 function share(){
@@ -411,8 +417,8 @@ function share(){
 
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-nav],[data-sub],[data-act],[data-rarity],[data-role],[data-boss]'); if(!b) return;
-  if(b.dataset.nav){ e.preventDefault(); if(b.dataset.nav==='hands' && b.dataset.act===undefined && S.tab==='jokers') S.calc.useTable = true; location.hash = '#'+b.dataset.nav; return; }
-  if(b.dataset.sub){ S.sub = b.dataset.sub; document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed', x.dataset.sub===S.sub)); $('#pane-browse').hidden = S.sub!=='browse'; $('#pane-table').hidden = S.sub!=='table'; window.scrollTo(0,0); return; }
+  if(b.dataset.nav){ e.preventDefault(); if(b.dataset.nav===S.tab){ window.scrollTo({top:0, behavior:'smooth'}); return; } location.hash = '#'+b.dataset.nav; return; }
+  if(b.dataset.sub){ showSub(b.dataset.sub); return; }
   if(b.dataset.rarity!==undefined){ S.rarity = b.dataset.rarity; save(); b.parentElement.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed', x.dataset.rarity===S.rarity)); updateGrid(); return; }
   if(b.dataset.role!==undefined){ S.role = S.role===b.dataset.role ? '' : b.dataset.role; save(); b.parentElement.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed', x.dataset.role===S.role)); updateGrid(); return; }
   if(b.dataset.boss!==undefined){ S.bossKind = b.dataset.boss; renderAll(); return; }
@@ -422,7 +428,8 @@ document.addEventListener('click', e => {
   else if(act==='ed'){ S.table[slot].ed = b.dataset.ed; save(); updateTable(); }
   else if(act==='left'||act==='right'){ const k = act==='left' ? slot-1 : slot+1; if(k<0||k>=S.table.length) return; [S.table[slot], S.table[k]] = [S.table[k], S.table[slot]]; save(); updateTable(); }
   else if(act==='autoorder'){ const a = analyse(); S.table = a.order.map(j=>({id:j.id, ed:j.ed})); save(); updateTable(); toast('Reordered left → right'); }
-  else if(act==='clear'){ if(!S.table.length) return; S.table = []; save(); updateTable(); toast('Table cleared'); }
+  else if(act==='clear'){ if(!S.table.length) return; const prev = S.table.slice(); S.table = []; save(); updateTable(); toast('Table cleared', () => { S.table = prev; save(); updateTable(); toast('Table restored'); }); }
+  else if(act==='undo'){ if(undoFn){ const f = undoFn; undoFn = null; $('#toast').classList.remove('show'); f(); } }
   else if(act==='share') share();
   else if(act==='clearq'){ S.q=''; const q=$('#q'); if(q){ q.value=''; q.focus(); } updateGrid(); }
   else if(act==='loadbuild') loadBuild(id);
@@ -437,6 +444,7 @@ document.addEventListener('input', e => {
   else if(t.id==='c-x'){ S.calc.x = +t.value||1; save(); updateCalc(); }
   else if(t.id==='c-lvl'){ S.calc.lvl = Math.max(1, Math.min(99, +t.value||1)); save(); updateCalc(); }
 });
+document.addEventListener('keydown', e => { if(e.key==='Escape' && e.target.id==='q' && S.q){ S.q=''; e.target.value=''; updateGrid(); } });
 document.addEventListener('change', e => {
   const t = e.target;
   if(t.id==='sort'){ S.sort = t.value; save(); updateGrid(); }
