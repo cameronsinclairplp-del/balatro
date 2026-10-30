@@ -35,16 +35,16 @@ const ANTI = [['nodiscard','discard'],['enhancedeat','enhanced'],['enhancedeat',
 const CARD_STAGE = new Set(['greedy','lusty','wrathful','gluttonous','scaryface','smileyface','evensteven','oddtodd','scholar','fibonacci','walkietalkie','arrowhead','onyxagate','bloodstone','roughgem','triboulet','photograph','ancient','idol','wee','hiker','businesscard','goldenticket']);
 
 /* ---------- state ---------- */
-const S = {tab:'jokers', sub:'browse', table:[], q:'', rarity:'', role:'', sort:'name',
+const S = {tab:'jokers', sub:'browse', table:[], q:'', rarity:'', role:'', sort:'auto', glow:'auto',
   calc:{hand:'flush', lvl:1, chips:0, mult:0, x:1, useTable:true}, bossKind:'all'};
 function load(){
   try{ const s = JSON.parse(localStorage.getItem(STORE)||'{}');
     if(Array.isArray(s.table)) S.table = s.table.filter(t => J[t.id]).map(t => ({id:t.id, ed: D.EDITIONS[t.ed] ? t.ed : 'b'}));
     if(s.calc) Object.assign(S.calc, s.calc);
-    if(s.sort) S.sort = s.sort; if(s.rarity!==undefined) S.rarity = s.rarity; if(s.role!==undefined) S.role = s.role;
+    if(s.sort) S.sort = s.sort; if(s.glow) S.glow = s.glow; if(s.rarity!==undefined) S.rarity = s.rarity; if(s.role!==undefined) S.role = s.role;
   }catch(e){}
 }
-function save(){ try{ localStorage.setItem(STORE, JSON.stringify({table:S.table, calc:S.calc, sort:S.sort, rarity:S.rarity, role:S.role})); }catch(e){} }
+function save(){ try{ localStorage.setItem(STORE, JSON.stringify({table:S.table, calc:S.calc, sort:S.sort, glow:S.glow, rarity:S.rarity, role:S.role})); }catch(e){} }
 function slots(){ return 5 + S.table.filter(t => t.ed==='n').length; }
 
 /* ---------- toast ---------- */
@@ -106,8 +106,8 @@ function xPower(j){ const m = /×(\d+(\.\d+)?)/.exec(j.eff); const base = m ? pa
 
 function pairScore(a, b){
   let s = 0; const why = []; const anti = [];
-  for(const g of (a.gives||[])) if(b.tags.includes(g)){ s += 3; why.push(`${a.name} provides ${LABEL[g]||g} for ${b.name}`); }
-  for(const g of (b.gives||[])) if(a.tags.includes(g)){ s += 3; why.push(`${b.name} provides ${LABEL[g]||g} for ${a.name}`); }
+  for(const g of (a.gives||[])) if(b.tags.includes(g)){ s += 3; why.push(`${a.name} → ${b.name}: ${LABEL[g]||g}`); }
+  for(const g of (b.gives||[])) if(a.tags.includes(g)){ s += 3; why.push(`${b.name} → ${a.name}: ${LABEL[g]||g}`); }
   for(const t of a.tags) if(b.tags.includes(t)){
     if(HAND_TAGS.has(t) || CARD_TAGS.has(t)){ s += 2; why.push(`Both reward ${LABEL[t]||t}`); }
     else if(t !== 'copy'){ s += 1; why.push(`Both care about ${LABEL[t]||t}`); }
@@ -179,18 +179,44 @@ function analyse(){
   }
   // recommendations
   const have = new Set(ids);
+  out.fit = {};
   const cands = D.JOKERS.filter(j => !have.has(j.id)).map(c => {
-    let score = (c.tier==='S'?2:c.tier==='A'?1.5:c.tier==='B'?.5:0); let reason = '';
+    let score = (c.tier==='S'?2:c.tier==='A'?1.5:c.tier==='B'?.5:0); let fitScore = 0; let reason = ''; let comboReason = ''; let anti = '';
     for(const t of js){
-      const p = pairScore(c, t); score += p.s; if(p.why.length && !reason) reason = p.why[0];
-      const cc = comboFor([c.id, t.id]); for(const x of cc){ score += x.anti ? -6 : 4; if(!x.anti && !reason) reason = x.why; }
+      const p = pairScore(c, t); score += p.s; fitScore += p.s; if(p.why.length && !reason) reason = p.why[0]; if(p.anti.length && !anti) anti = p.anti[0];
+      const cc = comboFor([c.id, t.id]); for(const x of cc){ score += x.anti ? -6 : 4; fitScore += x.anti ? -6 : 4; if(!x.anti && !comboReason) comboReason = x.why; if(x.anti && !anti) anti = x.why; }
     }
-    for(const leg of ['chips','mult','xmult']) if(c.roles.includes(leg)){ if(out.legs[leg].status==='notmet'){ score += 3; if(!reason) reason = `Fills the ${leg==='xmult'?'xMult':leg==='mult'?'+Mult':'Chips'} leg`; } else if(out.legs[leg].status==='partly') score += 1.5; }
+    if(comboReason) reason = comboReason;
+    if(c.roles.includes('copy') && js.some(j=>j.roles.includes('xmult'))){ score += 2; fitScore += 2; if(!reason) reason = 'Copies your xMult'; }
+    for(const leg of ['chips','mult','xmult']) if(c.roles.includes(leg)){ if(out.legs[leg].status==='notmet'){ score += 3; fitScore += 2; if(!reason) reason = `Fills the ${leg==='xmult'?'xMult':leg==='mult'?'+Mult':'Chips'} leg`; } else if(out.legs[leg].status==='partly') score += 1.5; }
     if(c.roles.includes('econ') && n && !js.some(j=>j.roles.includes('econ'))){ score += 1; if(!reason) reason = 'Economy — you have none'; }
+    const band = anti ? 'conflict' : fitScore >= 6 ? 'strong' : fitScore >= 3.5 ? 'good' : fitScore >= 1.5 ? 'some' : 'none';
+    out.fit[c.id] = {score, fitScore, band, reason: (anti || reason).replace(/\.$/,'')};
     if(n && !reason) reason = `${c.tier}-tier`; return {c, score, reason};
   }).filter(r => n ? r.score > 1.5 : true).sort((a,b)=>b.score-a.score);
   out.rec = cands.slice(0,6).map(r=>({j:r.c, reason:r.reason.replace(/\.$/,'')}));
   return out;
+}
+
+/* ---------- cached analysis, glow colours, affix colouring ---------- */
+let _aKey = null, _a = null;
+function A(){ const k = S.table.map(t=>t.id+t.ed).join(','); if(k !== _aKey){ _aKey = k; _a = S.table.length ? analyse() : null; } return _a; }
+const TIER = {S:{c:'#ff9a2e',name:'Legendary'}, A:{c:'#c084fc',name:'Epic'}, B:{c:'#5cb0ff',name:'Rare'}, C:{c:'#a8b5b2',name:'Common'}};
+const BAND = {strong:{c:'#ff9a2e',name:'Strong fit'}, good:{c:'#c084fc',name:'Good fit'}, some:{c:'#5cb0ff',name:'Some fit'}, none:{c:'#4a5c5c',name:'No fit'}, conflict:{c:'#ff6b63',name:'Conflict'}};
+function glowMode(){ return S.glow==='auto' ? (S.table.length ? 'fit' : 'power') : S.glow; }
+const HANDS_RE = /(Straight Flush|Five of a Kind|Flush House|Flush Five|Four of a Kind|Three of a Kind|Two Pair|Full House|High Card|Straight|Flush|Pair)/g;
+const CARDS_RE = /\b(face cards?|Kings?|Queens?|Jacks?|Aces?|Steel|Glass|Gold|Lucky|Stone|Wild|Enhanced|Spades?|Hearts?|Diamonds?|Clubs?|Planet|Tarot|Spectral|Negative|Jokers?|Booster Packs?|Boss Blinds?|Blind)\b/g;
+function affix(eff){
+  let t = h(eff);
+  t = t.replace(/([+−-]\d[\d,.]*\s?Chips?)/gi, '<b class="v v-chips">$1</b>');
+  t = t.replace(/(×\s?\d[\d.]*\s?Mult|×\d[\d.]*)/g, '<b class="v v-x">$1</b>');
+  t = t.replace(/([+−-]\d[\d.]*\s?Mult)/g, '<b class="v v-mult">$1</b>');
+  t = t.replace(/([+−-]?\$\d+)/g, '<b class="v v-gold">$1</b>');
+  t = t.replace(/(\d+ in \d+)/g, '<b class="v v-prob">$1</b>');
+  t = t.replace(/([+−-]\d+ (?:hand size|hands?|discards?|joker slots?))/gi, '<b class="v v-util">$1</b>');
+  t = t.replace(HANDS_RE, '<b class="v v-hand">$1</b>');
+  t = t.replace(CARDS_RE, '<i class="v v-card">$1</i>');
+  return t;
 }
 
 /* ---------- renderers ---------- */
@@ -207,7 +233,7 @@ function renderAll(){
   window.scrollTo(0,0);
 }
 function title(name, meta){ return `<div class="pagetitle"><h1>${name}</h1>${meta?`<span class="meta">${meta}</span>`:''}</div>`; }
-function rarTag(j){ const r = D.RARITY[j.r]; return `<span class="rar" style="background:${r.color}">${r.name.toUpperCase()} · ${j.cost ? '$'+j.cost : 'Soul only'}</span>`; }
+function rarTag(j){ const r = D.RARITY[j.r]; const c = j.r==='l' ? '#c983d2' : r.color; return `<span class="rar" style="--rc:${c}">${r.name.toUpperCase()} · ${j.cost ? '$'+j.cost : 'Soul only'}</span>`; }
 function roleTags(j){ return j.roles.map(r=>`<span class="tag tag-${r}">${h(D.ROLES[r]).toUpperCase()}</span>`).join('') + (j.scaling?'<span class="tag tag-scaling">SCALING</span>':''); }
 function miniStyle(j){ const c = D.RARITY[j.r].color; return `background:linear-gradient(160deg,${c} 0%,${shade(c,-.3)} 100%)`; }
 function shade(hex, k){ const n = parseInt(hex.slice(1),16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255; const f=v=>Math.max(0,Math.min(255,Math.round(k<0?v*(1+k):v+(255-v)*k))); return `rgb(${f(r)},${f(g)},${f(b)})`; }
@@ -219,22 +245,36 @@ function filtered(){
   const q = S.q.trim().toLowerCase();
   let list = D.JOKERS.filter(j => (!S.rarity || j.r===S.rarity) && (!S.role || j.roles.includes(S.role) || (S.role==='scaling'&&j.scaling)) && (!q || j.name.toLowerCase().includes(q) || j.eff.toLowerCase().includes(q)));
   const tierN = {S:0,A:1,B:2,C:3}; const rarN = {l:0,r:1,u:2,c:3};
-  if(S.sort==='tier') list.sort((a,b)=>tierN[a.tier]-tierN[b.tier]||a.name.localeCompare(b.name));
-  else if(S.sort==='cost') list.sort((a,b)=>(a.cost||99)-(b.cost||99)||a.name.localeCompare(b.name));
-  else if(S.sort==='rarity') list.sort((a,b)=>rarN[a.r]-rarN[b.r]||a.name.localeCompare(b.name));
+  const fit = S.table.length ? (A()||{}).fit : null;
+  const mode = S.sort==='auto' ? (fit ? 'fit' : 'tier') : S.sort;
+  if(mode==='fit' && fit) list.sort((a,b)=>((fit[b.id]||{}).score??-99)-((fit[a.id]||{}).score??-99)||tierN[a.tier]-tierN[b.tier]||a.name.localeCompare(b.name));
+  else if(mode==='tier') list.sort((a,b)=>tierN[a.tier]-tierN[b.tier]||a.name.localeCompare(b.name));
+  else if(mode==='cost') list.sort((a,b)=>(a.cost||99)-(b.cost||99)||a.name.localeCompare(b.name));
+  else if(mode==='rarity') list.sort((a,b)=>rarN[a.r]-rarN[b.r]||a.name.localeCompare(b.name));
   else list.sort((a,b)=>a.name.localeCompare(b.name));
   return list;
 }
 function tile(j){
   const on = S.table.some(t=>t.id===j.id);
-  return `<article class="tile${on?' on':''}" data-id="${j.id}">
-    <div class="top">${rarTag(j)}<span class="tier tier-${j.tier}" title="Tier ${j.tier} (community consensus)">${j.tier}</span></div>
+  const tier = TIER[j.tier]; const mode = glowMode(); const a = A();
+  const f = (mode==='fit' && a && !on) ? (a.fit[j.id] || {band:'none', reason:''}) : null;
+  const glow = f ? BAND[f.band].c : tier.c;
+  const dim = f && f.band==='none';
+  const fitLine = f ? (f.band==='none' ? `<span class="v-muted">No link to your table</span>` : `<span class="fit-tag">${BAND[f.band].name.toUpperCase()}</span> ${h(f.reason)}`) : '';
+  return `<article class="tile${on?' on':''}${dim?' dim':''}" data-id="${j.id}" style="--gc:${glow};--tc:${tier.c}">
+    <div class="top">${rarTag(j)}<span class="tier" style="--tc:${tier.c}" title="${tier.name} glow — tier ${j.tier}, community consensus">${j.tier}</span></div>
     <button class="add" type="button" data-act="${on?'remove':'add'}" data-id="${j.id}" aria-label="${on?'Remove':'Add'} ${h(j.name)}">${on?TICK:PLUS}</button>
     <h3 class="name">${h(j.name)}</h3>
-    <p class="eff">${h(j.eff)}</p>
+    <p class="eff">${affix(j.eff)}</p>
     <div class="roles">${roleTags(j)}</div>
     ${j.nocopy?'<div class="nocopy">Blueprint / Brainstorm can\'t copy this</div>':''}
+    ${on?'<div class="fitline" style="color:var(--gold)"><span class="fit-tag">ON YOUR TABLE</span></div>':f?`<div class="fitline" style="color:${glow}">${fitLine}</div>`:''}
   </article>`;
+}
+function legendHTML(){
+  const mode = glowMode(); const n = S.table.length;
+  const items = mode==='fit' ? ['strong','good','some','conflict'].map(k=>`<span><i class="dot" style="background:${BAND[k].c}"></i>${BAND[k].name}</span>`) : ['S','A','B','C'].map(k=>`<span><i class="dot" style="background:${TIER[k].c}"></i>${k} · ${TIER[k].name}</span>`);
+  return `<span class="legend-items">${items.join('')}</span><span class="legend-sw" role="group" aria-label="Glow by"><button class="pill" type="button" data-glow="power" aria-pressed="${mode==='power'}">Power</button><button class="pill" type="button" data-glow="fit" aria-pressed="${mode==='fit'}" ${n?'':'disabled title="Add jokers to your table first"'}>Fit</button></span>`;
 }
 function gridHTML(list){ return list.length ? list.map(tile).join('') : `<div class="empty">No jokers match. Try a shorter search.</div>`; }
 function viewJokers(){
@@ -251,7 +291,8 @@ function viewJokers(){
       <label class="search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5a6f6f" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="sr">Search jokers</span><input id="q" type="search" placeholder="Search name or effect…" value="${h(S.q)}" autocomplete="off" autocorrect="off" autocapitalize="off"><button class="clear" type="button" data-act="clearq" aria-label="Clear search" ${S.q?'':'hidden'}>${TICK}</button></label>
       <div class="scrollx filters" role="group" aria-label="Rarity">${rar.map(([v,n])=>`<button class="pill" type="button" data-rarity="${v}" aria-pressed="${S.rarity===v}">${v?`<span class="dot" style="background:${D.RARITY[v].color}"></span>`:''}${n}</button>`).join('')}</div>
       <div class="scrollx filters" role="group" aria-label="Role">${roles.map(([v,n])=>`<button class="pill" type="button" data-role="${v}" aria-pressed="${S.role===v}">${n}</button>`).join('')}</div>
-      <div class="sortrow"><span class="meta" id="count">${list.length} of ${D.JOKERS.length}</span><label><span class="sr">Sort</span><select class="select" id="sort"><option value="name" ${S.sort==='name'?'selected':''}>A–Z</option><option value="tier" ${S.sort==='tier'?'selected':''}>Best first</option><option value="rarity" ${S.sort==='rarity'?'selected':''}>Rarity</option><option value="cost" ${S.sort==='cost'?'selected':''}>Cheapest</option></select></label></div>
+      <div class="sortrow"><span class="meta" id="count">${list.length} of ${D.JOKERS.length}</span><label><span class="sr">Sort</span><select class="select" id="sort"><option value="auto" ${S.sort==='auto'?'selected':''}>Best</option><option value="tier" ${S.sort==='tier'?'selected':''}>Best first</option><option value="name" ${S.sort==='name'?'selected':''}>A–Z</option><option value="rarity" ${S.sort==='rarity'?'selected':''}>Rarity</option><option value="cost" ${S.sort==='cost'?'selected':''}>Cheapest</option></select></label></div>
+      <div class="legend" id="legend">${legendHTML()}</div>
       <div class="grid" id="grid">${gridHTML(list)}</div>
     </section>
     <aside class="pane-table" id="pane-table" aria-label="Your table" ${S.sub!=='table'?'hidden':''}>${tablePane()}</aside>
@@ -267,7 +308,7 @@ function tablePane(){
       <div class="inset slots">${slotHTML}</div>
       <p class="note" style="margin-top:10px">Add jokers from Browse and the stool check, order, synergies and shopping list appear here. Or load a build from the Builds tab.</p>
       <h3 class="sec">GOOD FIRST BUYS</h3>
-      <div class="chips-row">${starters.map(j=>`<button class="pill rec" type="button" data-act="add" data-id="${j.id}" style="--rc:${D.RARITY[j.r].color}">${h(j.name)}</button>`).join('')}</div>
+      <div class="chips-row">${starters.map(j=>`<button class="pill rec" type="button" data-act="add" data-id="${j.id}" style="--rc:${TIER[j.tier].c}">${h(j.name)}</button>`).join('')}</div>
       <div class="tablebar"><button class="btn btn-grey btn-sm" type="button" data-nav="builds">Load a build</button></div>
     </div>`;
   }
@@ -278,7 +319,7 @@ function tablePane(){
     <div class="pane-head"><h2>YOUR TABLE <span class="meta">${n} / ${sl}</span></h2><button class="btn btn-grey btn-sm" type="button" data-act="autoorder" ${a.order.map(j=>j.id).join()===js.map(j=>j.id).join()?'disabled':''}>Auto-order</button></div>
     <div class="inset slots">${slotHTML}</div>
     <div class="stack" style="margin-top:10px">${js.map((j,i)=>`<div class="trow" data-slot="${i}">
-      <div class="head"><div class="who"><span class="word" style="color:${jcolor(j)}">${i+1} · ${h(j.name)}</span><span class="meta">${h(j.eff)}</span></div>
+      <div class="head"><div class="who"><span class="word" style="color:${jcolor(j)}">${i+1} · ${h(j.name)}</span><span class="affix">${affix(j.eff)}</span></div>
         <div class="acts"><button class="ico" type="button" data-act="left" data-slot="${i}" aria-label="Move ${h(j.name)} left" ${i===0?'disabled':''}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button class="ico" type="button" data-act="right" data-slot="${i}" aria-label="Move ${h(j.name)} right" ${i===n-1?'disabled':''}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><button class="ico danger" type="button" data-act="remove" data-id="${j.id}" aria-label="Remove ${h(j.name)}">${TICK}</button></div></div>
       <div class="eds" role="group" aria-label="Edition for ${h(j.name)}">${Object.entries(D.EDITIONS).map(([k,e])=>`<button class="ed ed-${k}" type="button" data-act="ed" data-slot="${i}" data-ed="${k}" aria-pressed="${j.ed===k}" title="${e.name}${e.chips?` +${e.chips} Chips`:e.mult?` +${e.mult} Mult`:e.x?` ×${e.x} Mult`:e.slot?' +1 joker slot':''}">${e.short}</button>`).join('')}</div>
     </div>`).join('')}</div>
@@ -298,7 +339,7 @@ function tablePane(){
     ${a.warn.length?`<h3 class="sec warn">WATCH OUT</h3><div class="stack">${a.warn.map(w=>typeof w==='string'?`<div class="inset note warn">${h(w)}</div>`:`<div class="inset note warn">${w.names.length?`<b>${h(w.names.join(' + '))}</b> — `:''}${h(w.why)}</div>`).join('')}</div>`:''}
 
     <h3 class="sec">ADD NEXT</h3>
-    <div class="chips-row">${a.rec.map(r=>`<button class="pill rec" type="button" data-act="add" data-id="${r.j.id}" style="--rc:${D.RARITY[r.j.r].color}" title="${h(r.reason)}">${h(r.j.name)} <small>${h(r.reason)}</small></button>`).join('')}</div>
+    <div class="chips-row">${a.rec.map(r=>`<button class="pill rec" type="button" data-act="add" data-id="${r.j.id}" style="--rc:${BAND[(a.fit[r.j.id]||{band:'some'}).band].c}" title="${h(r.reason)}">${h(r.j.name)} <small>${h(r.reason)}</small></button>`).join('')}</div>
 
     <div class="tablebar"><button class="btn btn-blue btn-sm" type="button" data-act="share">Copy share link</button><button class="btn btn-grey btn-sm" type="button" data-nav="hands">Score it</button><button class="btn btn-red btn-sm" type="button" data-act="clear">Clear table</button></div>
   </div>`;
@@ -306,9 +347,9 @@ function tablePane(){
 function updateTable(){
   const pane = $('#pane-table'); if(pane) pane.innerHTML = tablePane();
   const badge = $('#seg-count'); if(badge) badge.textContent = S.table.length;
-  document.querySelectorAll('.tile').forEach(el => { const on = S.table.some(t=>t.id===el.dataset.id); el.classList.toggle('on', on); const b = el.querySelector('.add'); if(b){ b.dataset.act = on?'remove':'add'; b.innerHTML = on?TICK:PLUS; b.setAttribute('aria-label', `${on?'Remove':'Add'} ${J[el.dataset.id].name}`); } });
+  if($('#grid')) updateGrid();
 }
-function updateGrid(){ const g = $('#grid'); if(!g) return; const list = filtered(); g.innerHTML = gridHTML(list); const c = $('#count'); if(c) c.textContent = `${list.length} of ${D.JOKERS.length}`; const cl = $('.search .clear'); if(cl) cl.hidden = !S.q; }
+function updateGrid(){ const g = $('#grid'); if(!g) return; const lg = $('#legend'); if(lg) lg.innerHTML = legendHTML(); const list = filtered(); g.innerHTML = gridHTML(list); const c = $('#count'); if(c) c.textContent = `${list.length} of ${D.JOKERS.length}`; const cl = $('.search .clear'); if(cl) cl.hidden = !S.q; }
 
 /* Hands */
 function calcOut(){
@@ -362,7 +403,7 @@ function viewBuilds(){
   return `${title('BUILDS', 'Eight archetypes. Load one to see its stool.')}
   <div class="builds">${D.BUILDS.map(b=>`<article class="panel build">
     <h3>${h(b.name)}</h3><span class="goal">${h(b.goal)}</span>
-    <div class="chips-row">${b.jokers.map(id=>{const j=J[id];return `<button class="pill rec" type="button" data-act="add" data-id="${id}" style="--rc:${D.RARITY[j.r].color}" title="${h(j.eff)}">${h(j.name)}</button>`}).join('')}</div>
+    <div class="chips-row">${b.jokers.map(id=>{const j=J[id];return `<button class="pill rec" type="button" data-act="add" data-id="${id}" style="--rc:${TIER[j.tier].c}" title="${h(j.eff)}">${h(j.name)}</button>`}).join('')}</div>
     <dl><dt>Cards</dt><dd>${h(b.keep)}</dd><dt>Planet</dt><dd>${h(b.planet)}</dd><dt>Hurts</dt><dd>${h(b.bad.join(', '))}</dd></dl>
     <div class="inset note tip"><b>Tip</b> — ${h(b.tip)}</div>
     <div class="tablebar"><button class="btn btn-blue btn-sm" type="button" data-act="loadbuild" data-id="${b.id}">Load this build</button></div>
@@ -422,6 +463,7 @@ document.addEventListener('click', e => {
   if(b.dataset.rarity!==undefined){ S.rarity = b.dataset.rarity; save(); b.parentElement.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed', x.dataset.rarity===S.rarity)); updateGrid(); return; }
   if(b.dataset.role!==undefined){ S.role = S.role===b.dataset.role ? '' : b.dataset.role; save(); b.parentElement.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed', x.dataset.role===S.role)); updateGrid(); return; }
   if(b.dataset.boss!==undefined){ S.bossKind = b.dataset.boss; renderAll(); return; }
+  if(b.dataset.glow){ S.glow = b.dataset.glow; save(); updateGrid(); return; }
   const act = b.dataset.act; const id = b.dataset.id; const slot = +b.dataset.slot;
   if(act==='add') addJoker(id);
   else if(act==='remove') removeJoker(id);

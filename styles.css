@@ -96,24 +96,40 @@ main{min-width:0;padding:14px 16px calc(var(--tabbar-h) + 24px + env(safe-area-i
 .select:hover{border-color:var(--soft)}
 .select{appearance:none;-webkit-appearance:none;min-height:38px;padding:4px 32px 4px 12px;border-radius:999px;border:2px solid var(--grey);background:var(--inset) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cfdbd8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center/14px;color:var(--soft);font-family:var(--disp);font-size:18px;letter-spacing:.3px}
 
-/* Joker tiles */
-.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
-.tile{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:start;padding:12px 12px 10px;border-radius:12px;background:var(--card);color:var(--card-text);box-shadow:0 4px 0 var(--card-shadow),0 8px 14px rgba(0,0,0,.35);transition:transform .15s ease-out,box-shadow .15s ease-out}
-.tile:hover{transform:translateY(-2px);box-shadow:0 6px 0 var(--card-shadow),0 12px 18px rgba(0,0,0,.4)}
-.tile.on{outline:3px solid var(--gold);outline-offset:-3px}
+/* Joker tiles — ARPG item cards */
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.tile{--gc:#a8b5b2;--tc:#a8b5b2;position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:start;padding:12px 12px 11px;border-radius:12px;background:linear-gradient(180deg,#1e2c2c 0%,#141f1f 100%);color:#e8e4d8;border:2px solid var(--gc);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 0 18px color-mix(in srgb,var(--gc) 55%,transparent),0 6px 14px rgba(0,0,0,.45);transition:transform .15s ease-out,box-shadow .15s ease-out,opacity .15s}
+.tile::before{content:"";position:absolute;inset:0;border-radius:10px;pointer-events:none;background:linear-gradient(180deg,color-mix(in srgb,var(--gc) 14%,transparent),transparent 55%)}
+.tile:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 0 26px color-mix(in srgb,var(--gc) 75%,transparent),0 12px 18px rgba(0,0,0,.5)}
+.tile.dim{opacity:.72;box-shadow:0 0 0 1px rgba(0,0,0,.6),0 6px 14px rgba(0,0,0,.45)}
+.tile.dim:hover{opacity:1}
+.tile.on{--gc:var(--gold)}
+.tile>*{position:relative}
 .tile .top{grid-column:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .tile .name,.tile .eff,.tile .roles{grid-column:1}
-.rar{display:inline-block;padding:3px 9px;border-radius:6px;color:var(--ink);font-family:var(--disp);font-size:15px;line-height:1;letter-spacing:.3px}
-.tier{display:inline-flex;align-items:center;justify-content:center;width:24px;height:22px;border-radius:6px;font-family:var(--disp);font-size:16px;line-height:1;background:#e3dccb;color:#3a4646}
-.tier-S{background:var(--gold);color:var(--gold-text)}.tier-A{background:#4bc292;color:#0f2a27}
-.tile .name{font-size:28px;color:var(--card-text)}
-.tile .eff{font-size:14px;line-height:1.45;color:var(--card-muted);font-weight:600}
-.tile .roles{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.rar{display:inline-block;padding:3px 8px;border-radius:5px;color:var(--rc,var(--soft));border:1px solid color-mix(in srgb,var(--rc,var(--soft)) 60%,transparent);font-family:var(--disp);font-size:14px;line-height:1;letter-spacing:.5px}
+.tier{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:22px;padding:0 6px;border-radius:5px;font-family:var(--disp);font-size:16px;line-height:1;background:var(--tc);color:var(--ink);box-shadow:0 0 8px color-mix(in srgb,var(--tc) 60%,transparent)}
+.tile .name{font-size:30px;color:var(--tc);text-shadow:0 0 12px color-mix(in srgb,var(--tc) 45%,transparent),0 2px 0 rgba(0,0,0,.5)}
+.tile .eff{font-size:16px;line-height:1.5;color:#e8e4d8;font-weight:600}
+.v{font-style:normal;font-weight:800}
+.v-chips{color:#4fb8ff}.v-mult{color:#ff8a82}.v-x{color:#d79cf0}.v-gold{color:#f1b545}.v-prob{color:#7ee0a0}.v-util{color:#ffd37a}.v-hand{color:#fff}.v-card{color:#ffe9a6;font-weight:700}
+.v-muted{color:var(--muted)}
+.tile .roles{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
 .tile .add{grid-column:2;grid-row:1 / span 4;align-self:center;width:44px;height:44px;border:0;border-radius:10px;background:var(--btn-blue);box-shadow:0 4px 0 var(--btn-blue-dk);color:#fff;display:inline-flex;align-items:center;justify-content:center;transition:transform .12s,box-shadow .12s,background .15s}
 .tile .add:active{transform:translateY(3px);box-shadow:0 1px 0 var(--btn-blue-dk)}
 .tile.on .add{background:var(--btn-red);box-shadow:0 4px 0 var(--btn-red-dk)}
 .tile.on .add:active{box-shadow:0 1px 0 var(--btn-red-dk)}
-.tile .nocopy{grid-column:1 / -1;font-size:11px;color:#7a5a00;font-weight:800;margin-top:2px}
+.tile .nocopy{grid-column:1 / -1;font-size:12px;color:#ffd37a;font-weight:800}
+.tile .fitline{grid-column:1 / -1;margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);font-size:13px;font-weight:700;line-height:1.35}
+.fit-tag{font-family:var(--disp);font-size:15px;letter-spacing:.6px;margin-right:6px}
+.legend{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:-2px 0 12px}
+.legend-items{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;font-weight:800;color:var(--soft)}
+.legend-items span{display:inline-flex;align-items:center;gap:6px}
+.legend .dot{width:10px;height:10px;border-radius:50%;display:inline-block;box-shadow:0 0 6px currentColor}
+.legend-sw{display:inline-flex;gap:4px;padding:3px;border-radius:999px;background:var(--inset);border:2px solid var(--inset-edge)}
+.legend-sw .pill{min-height:32px;padding:4px 12px;font-size:16px;border-color:transparent}
+.legend-sw .pill:disabled{opacity:.4;cursor:default}
+.affix{font-size:14px;line-height:1.45;color:var(--soft);font-weight:600}
 .count{margin:6px 0 2px}
 
 /* Table */
@@ -257,7 +273,7 @@ button.hand:hover{border-color:var(--grey);transform:translateY(-1px)}
 .pane-head h2 .meta{font-family:var(--disp);font-size:20px;color:var(--muted)}
 .pagetitle{display:none}
 
-@media (pointer:coarse){.pill,.ed,.btn-sm,.select{min-height:44px}.ed{min-width:48px}.ico{width:44px;height:44px}}
+@media (pointer:coarse){.pill,.ed,.btn-sm,.select{min-height:44px}.ed{min-width:48px}.ico{width:44px;height:44px}.legend-sw .pill{min-height:44px}}
 @media (max-width:699px){.tile .eff{font-size:15px}.note{font-size:15px}}
 
 /* ---- Tablet portrait: two-column tiles ---- */
